@@ -1,16 +1,16 @@
 <div align="center">
   <div>
-     <img src="https://img.shields.io/badge/Python-black?style=for-the-badge&logoColor=white&logo=python&color=yellow" alt="python" />
-     <img src="https://img.shields.io/badge/Flask-red?style=for-the-badge&logoColor=blue&logo=flask&color=white" alt="flask" />
-    <img src="https://img.shields.io/badge/-React.js-black?style=for-the-badge&logoColor=white&logo=react&color=61DAFB" alt="react.js" />
-    <img src="https://img.shields.io/badge/SQL-black?style=for-the-badge&logoColor=white&logo=mysql&color=green" alt="sql" />
+   <img src="https://img.shields.io/badge/Python-black?style=for-the-badge&logoColor=white&logo=python&color=yellow" alt="python" />
+   <img src="https://img.shields.io/badge/Flask-red?style=for-the-badge&logoColor=blue&logo=flask&color=white" alt="flask" />
+   <img src="https://img.shields.io/badge/-React.js-black?style=for-the-badge&logoColor=white&logo=react&color=61DAFB" alt="react.js" />
+   <img src="https://img.shields.io/badge/SQL-black?style=for-the-badge&logoColor=white&logo=mysql&color=green" alt="sql" />
    <img src="https://img.shields.io/badge/Gemini-blue?style=for-the-badge&logoColor=black&logo=gemini&color=blue" alt="gemini" />
    <img src="https://img.shields.io/badge/Twilio-red?style=for-the-badge&logoColor=red&logo=twilio&color=black" alt="Twilio" />
    <img src="https://img.shields.io/badge/Whatsapp-white?style=for-the-badge&logoColor=green&logo=whatsapp&color=white" alt="whatsapp" />
-   
   </div>
   <h3 align="center">WhatsApp Drive Assistant - Full Stack Application</h3>
 </div>
+
 
 
 ## <a name="introduction">🤖 Introduction</a>
