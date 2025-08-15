@@ -41,7 +41,7 @@ class GoogleDriveClient:
     def signIn(self , code : str):
         try:
             flow = Flow.from_client_secrets_file(
-                        self.credentials_file, scopes=self.SCOPES, redirect_uri="http://localhost:3000"
+                        self.credentials_file, scopes=self.SCOPES, redirect_uri="https://whatsapp-drive-assistent.vercel.app"
                     )
             flow.fetch_token(code=code)
 
