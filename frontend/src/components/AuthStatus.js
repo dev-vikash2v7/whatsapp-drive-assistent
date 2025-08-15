@@ -9,6 +9,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const AuthStatus = ({ onAuthChange }) => {
   const [authStatus, setAuthStatus] = useState(null);
@@ -29,7 +30,7 @@ const AuthStatus = ({ onAuthChange }) => {
     onSuccess: async (response) => {
       console.log("Auth Code Response:", response);
       // response.code contains the authorization code
-      const res = await fetch("http://localhost:5000/api/auth", {
+      const res = await fetch(API_BASE_URL + "/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: response.code }),
