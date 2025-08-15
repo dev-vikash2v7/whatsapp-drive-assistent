@@ -19,6 +19,7 @@ from google_auth_oauthlib.flow import Flow
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+file_path = "/tmp/token.json"
 
 class GoogleDriveClient:
     
@@ -50,7 +51,7 @@ class GoogleDriveClient:
             print('creds' , creds)
                     
             try:
-                with open('token.json', 'w') as token:
+                with open(file_path, 'w') as token:
                     token.write(creds.to_json())
             except Exception as e:
                 logger.error(f"Failed to save token: {e}")
@@ -106,17 +107,17 @@ class GoogleDriveClient:
 
     
     def is_authenticated(self):
-        if not os.path.exists("token.json"):
+        if not os.path.exists(file_path):
             return False
 
-        creds = Credentials.from_authorized_user_file("token.json", self.SCOPES)
+        creds = Credentials.from_authorized_user_file(file_path, self.SCOPES)
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
                     creds.refresh(Request())  # 🔄 Refresh the token
                     # Save refreshed credentials
-                    with open("token.json", "w") as token_file:
+                    with open(file_path, "w") as token_file:
                         token_file.write(creds.to_json())
                 except Exception as e:
                     print("Token refresh failed:", e)
@@ -194,8 +195,7 @@ class GoogleDriveClient:
             
             self.service.files().delete(fileId=file_id).execute()
 
-            print("file_id deleted" , file_id)
-
+         
             return {"message": f"File '{file_path}' deleted successfully"}
             
         except HttpError as error:
