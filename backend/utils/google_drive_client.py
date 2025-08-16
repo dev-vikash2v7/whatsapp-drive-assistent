@@ -15,11 +15,12 @@ from bs4 import BeautifulSoup
 import logging
 from datetime import datetime
 from google_auth_oauthlib.flow import Flow
+from .storage import storage
+from .config import Config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-file_path = "/tmp/token.json"
 
 class GoogleDriveClient:
     
@@ -41,9 +42,12 @@ class GoogleDriveClient:
     
     def signIn(self , code : str):
         try:
+            print('Config.GOOGLE_DRIVE_REDIRECT_URI' , Config.GOOGLE_DRIVE_REDIRECT_URI)
             flow = Flow.from_client_secrets_file(
-                        self.credentials_file, scopes=self.SCOPES, redirect_uri="https://whatsapp-drive-assistent.vercel.app"
+                        self.credentials_file, scopes=self.SCOPES, redirect_uri=Config.GOOGLE_DRIVE_REDIRECT_URI
                     )
+
+                    
             flow.fetch_token(code=code)
 
             creds = flow.credentials
@@ -51,8 +55,9 @@ class GoogleDriveClient:
             print('creds' , creds)
                     
             try:
-                with open(file_path, 'w') as token:
-                    token.write(creds.to_json())
+                # Save token to persistent storage
+                token_data = json.loads(creds.to_json())
+                storage.save_token(token_data)
             except Exception as e:
                 logger.error(f"Failed to save token: {e}")
 
@@ -73,9 +78,12 @@ class GoogleDriveClient:
             creds = None
             
 
-            if os.path.exists('token.json'):
+            if storage.token_exists():
                 try:
-                    creds = Credentials.from_authorized_user_file('token.json', self.SCOPES)
+                    # Load token from persistent storage
+                    token_data = storage.load_token()
+                    if token_data:
+                        creds = Credentials.from_authorized_user_info(token_data, self.SCOPES)
                     
                     if not creds or not creds.valid:
                         creds = self.signIn(code)
@@ -107,18 +115,23 @@ class GoogleDriveClient:
 
     
     def is_authenticated(self):
-        if not os.path.exists(file_path):
+        if not storage.token_exists():
             return False
 
-        creds = Credentials.from_authorized_user_file(file_path, self.SCOPES)
+        # Load token from persistent storage
+        token_data = storage.load_token()
+        if not token_data:
+            return False
+
+        creds = Credentials.from_authorized_user_info(token_data, self.SCOPES)
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
                     creds.refresh(Request())  # 🔄 Refresh the token
-                    # Save refreshed credentials
-                    with open(file_path, "w") as token_file:
-                        token_file.write(creds.to_json())
+                    # Save refreshed credentials to persistent storage
+                    refreshed_token_data = json.loads(creds.to_json())
+                    storage.save_token(refreshed_token_data)
                 except Exception as e:
                     print("Token refresh failed:", e)
                     return False
@@ -153,8 +166,6 @@ class GoogleDriveClient:
                 pageSize=50,
                 fields="nextPageToken, files(id, name, mimeType, size, modifiedTime)"
             ).execute()
-
-            print("results ------------ " , results)
 
             
             files = results.get('files', [])
