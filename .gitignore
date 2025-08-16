@@ -1,5 +1,4 @@
-.venv/
+.venv
 .env
-token.json
 frontend/node_modules
 frontend/yarn.lock
