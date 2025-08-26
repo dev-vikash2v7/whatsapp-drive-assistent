@@ -6,39 +6,73 @@ import {
   RefreshCw, 
   Cloud, 
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Phone
 } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const AuthStatus = ({ onAuthChange }) => {
+const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) => {
   const [authStatus, setAuthStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [error, setError] = useState(null);
+  const [whatsappNumberError, setWhatsappNumberError] = useState('');
  
  
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    if (whatsappNumber.trim()) {
+      checkAuthStatus();
+    }
+  }, [whatsappNumber]);
+
+  const validateWhatsAppNumber = (number) => {
+    // Basic WhatsApp number validation
+    const cleaned = number.replace(/\D/g, '');
+    if (cleaned.length < 10 || cleaned.length > 15) {
+      return 'Please enter a valid WhatsApp number (10-15 digits)';
+    }
+    return '';
+  };
+
+  const handleWhatsAppNumberChange = (e) => {
+    const number = e.target.value;
+    onWhatsAppNumberChange(number);
+    setWhatsappNumberError(validateWhatsAppNumber(number));
+  };
 
   const login = useGoogleLogin({
     flow: "auth-code", // 👈 IMPORTANT for backend exchange
     scope: "https://www.googleapis.com/auth/drive.file",
     onSuccess: async (response) => {
       console.log("Auth Code Response:", response);
+      
+      if (!whatsappNumber.trim()) {
+        setError('Please enter your WhatsApp number');
+        return;
+      }
+      
+      const validationError = validateWhatsAppNumber(whatsappNumber);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+      
       // response.code contains the authorization code
       const res = await fetch(API_BASE_URL + "/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: response.code }),
+        body: JSON.stringify({ 
+          code: response.code,
+          whatsapp_number: whatsappNumber.trim()
+        }),
       });
       // console.log(await res.json());
 
       const data = await res.json();
-
 
       if (data.success) {
         setAuthStatus({
@@ -50,7 +84,7 @@ const AuthStatus = ({ onAuthChange }) => {
         }
         
       } else {
-        setError(data.message || 'Failed to connect to Google Drive');
+        setError(data.error || data.message || 'Failed to connect to Google Drive');
       }
 
     },
@@ -59,10 +93,15 @@ const AuthStatus = ({ onAuthChange }) => {
 
 
   const checkAuthStatus = async () => {
+    if (!whatsappNumber.trim()) {
+      setError('Please enter your WhatsApp number to check authentication status');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
-      const response = await driveAPI.checkAuthStatus();
+      const response = await driveAPI.checkAuthStatus(whatsappNumber.trim());
       setAuthStatus(response);
       if (onAuthChange) {
         onAuthChange(response.authenticated);
@@ -76,6 +115,17 @@ const AuthStatus = ({ onAuthChange }) => {
   };
 
   const handleConnect = async () => {
+    if (!whatsappNumber.trim()) {
+      setError('Please enter your WhatsApp number');
+      return;
+    }
+    
+    const validationError = validateWhatsAppNumber(whatsappNumber);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    
     setConnecting(true);
     setError(null);
     try {
@@ -140,11 +190,35 @@ const AuthStatus = ({ onAuthChange }) => {
         </h2>
         <button
           onClick={checkAuthStatus}
-          disabled={loading}
+          disabled={loading || !whatsappNumber.trim()}
           className="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
+      </div>
+
+      {/* WhatsApp Number Input */}
+      <div className="mb-4">
+        <label htmlFor="whatsapp-number" className="block text-sm font-medium text-gray-700 mb-2">
+          <Phone className="w-4 h-4 inline mr-1" />
+          WhatsApp Number
+        </label>
+        <input
+          type="tel"
+          id="whatsapp-number"
+          value={whatsappNumber}
+          onChange={handleWhatsAppNumberChange}
+          placeholder="+1234567890"
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            whatsappNumberError ? 'border-red-300' : 'border-gray-300'
+          }`}
+        />
+        {whatsappNumberError && (
+          <p className="text-sm text-red-600 mt-1">{whatsappNumberError}</p>
+        )}
+        <p className="text-xs text-gray-500 mt-1">
+          Enter your WhatsApp number to connect your Google Drive account
+        </p>
       </div>
 
       {/* Status Display */}
@@ -178,7 +252,7 @@ const AuthStatus = ({ onAuthChange }) => {
            <>
              <button
                onClick={handleConnect}
-               disabled={connecting}
+               disabled={connecting || !whatsappNumber.trim() || whatsappNumberError}
                className="w-full flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
 
              >

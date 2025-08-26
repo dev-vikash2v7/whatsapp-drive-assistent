@@ -32,9 +32,22 @@ summarizer = DocumentSummarizer()
 
 @app.route("/api/auth", methods=["POST"])
 def auth():
-    code = request.json.get("code")
-    drive_client._authenticate(code)
-    return jsonify({"message": "Connected to Google Drive"})
+    data = request.json
+    code = data.get("code")
+    whatsapp_number = data.get("whatsapp_number")
+    
+    if not code:
+        return jsonify({"success": False, "error": "Authorization code is required"}), 400
+    
+    if not whatsapp_number:
+        return jsonify({"success": False, "error": "WhatsApp number is required"}), 400
+    
+    try:
+        drive_client._authenticate(code, whatsapp_number)
+        return jsonify({"success": True, "message": "Connected to Google Drive"})
+    except Exception as e:
+        logger.error(f"Authentication failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 
@@ -51,6 +64,9 @@ def api_incoming_message():
 
         if not message_body:
             return _create_twilio_response("No message provided")
+        
+        # Set the WhatsApp number in the command parser for authentication
+        command_parser.current_whatsapp_number = from_number
         
         # Parse the command
         parsed_command = command_parser.parse_message(message_body)
@@ -284,10 +300,15 @@ def _execute_command(command: str, parsed_command: dict) -> str:
         # print('parsed_command' , parsed_command)
         # print(GoogleDriveClient.serv  ice)
 
+        # Get WhatsApp number from the command context or use a default
+        # For now, we'll need to pass this through the command execution
+        # This will be handled by the webhook which has the from_number
+        whatsapp_number = getattr(command_parser, 'current_whatsapp_number', None)
+        
         if not drive_client.service:
-            res = drive_client.is_authenticated()
+            res = drive_client.is_authenticated(whatsapp_number)
             if not res:
-                return 'Please first sign in to your google drive account to use this command . Visit http://localhost:3000/ to sign in.'
+                return 'Please first sign in to your google drive account to use this command. Visit http://localhost:3000/ to sign in.'
 
 
 
@@ -460,13 +481,16 @@ def get_root():
 
 @app.route('/api/auth/status', methods=['GET'])
 def is_authenticated():
-    is_authenticated = drive_client.is_authenticated()
-
+    whatsapp_number = request.args.get('whatsapp_number')
+    
+    if not whatsapp_number:
+        return jsonify({"success": False, "error": "WhatsApp number is required"}), 400
+    
+    is_authenticated = drive_client.is_authenticated(whatsapp_number)
 
     print("is_authenticated" , is_authenticated)
 
-
-    return jsonify({"authenticated": is_authenticated})
+    return jsonify({"success": True, "authenticated": is_authenticated})
 
 
 

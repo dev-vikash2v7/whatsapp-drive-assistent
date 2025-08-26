@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 class GoogleDriveClient:
     
     service = None
+    current_whatsapp_number = None
 
     SCOPES = [
         'https://www.googleapis.com/auth/drive.file',
@@ -40,7 +41,7 @@ class GoogleDriveClient:
     def __init__(self, credentials_file: str = None):
         self.credentials_file =  os.getenv('GOOGLE_DRIVE_CREDENTIALS_FILE')
     
-    def signIn(self , code : str):
+    def signIn(self, code: str, whatsapp_number: str):
         try:
             print('Config.GOOGLE_DRIVE_REDIRECT_URI' , Config.GOOGLE_DRIVE_REDIRECT_URI)
             flow = Flow.from_client_secrets_file(
@@ -55,11 +56,12 @@ class GoogleDriveClient:
             print('creds' , creds)
                     
             try:
-                # Save token to persistent storage
+                # Save token to persistent storage with WhatsApp number
                 token_data = json.loads(creds.to_json())
-                storage.save_token(token_data)
+                storage.save_token(token_data, whatsapp_number)
+                self.current_whatsapp_number = whatsapp_number
             except Exception as e:
-                logger.error(f"Failed to save token: {e}")
+                logger.error(f"Failed to save token for WhatsApp number {whatsapp_number}: {e}")
 
             return creds
 
@@ -72,34 +74,35 @@ class GoogleDriveClient:
 
 
 
-    def _authenticate(self , code : str):
+    def _authenticate(self, code: str, whatsapp_number: str):
         """Authenticate with Google Drive API"""
         try:
             creds = None
             
 
-            if storage.token_exists():
+            if storage.token_exists(whatsapp_number):
                 try:
                     # Load token from persistent storage
-                    token_data = storage.load_token()
+                    token_data = storage.load_token(whatsapp_number)
                     if token_data:
                         creds = Credentials.from_authorized_user_info(token_data, self.SCOPES)
                     
                     if not creds or not creds.valid:
-                        creds = self.signIn(code)
+                        creds = self.signIn(code, whatsapp_number)
                 except Exception as e:
-                    logger.error(f"Failed to load existing token: {e}")
+                    logger.error(f"Failed to load existing token for WhatsApp number {whatsapp_number}: {e}")
                     creds = None
             else :
-                  creds = self.signIn(code)
+                  creds = self.signIn(code, whatsapp_number)
                 
             try:
                 self.service = build('drive', 'v3', credentials=creds)
+                self.current_whatsapp_number = whatsapp_number
 
                 print('self.service' , self.service)
 
 
-                logger.info("Google Drive authentication successful")
+                logger.info(f"Google Drive authentication successful for WhatsApp number: {whatsapp_number}")
 
 
 
@@ -109,17 +112,24 @@ class GoogleDriveClient:
                 raise ValueError(f"Failed to initialize Google Drive self.service: {str(e)}")
             
         except Exception as e:
-            logger.error(f"Authentication failed: {e}")
+            logger.error(f"Authentication failed for WhatsApp number {whatsapp_number}: {e}")
             print("Authentication failed: " , e)
             raise ValueError(f"Google Drive authentication failed: {str(e)}")
 
     
-    def is_authenticated(self):
-        if not storage.token_exists():
+    def is_authenticated(self, whatsapp_number: str = None):
+        # If no WhatsApp number provided, use the current one
+        if whatsapp_number is None:
+            whatsapp_number = self.current_whatsapp_number
+            
+        if not whatsapp_number:
+            return False
+            
+        if not storage.token_exists(whatsapp_number):
             return False
 
         # Load token from persistent storage
-        token_data = storage.load_token()
+        token_data = storage.load_token(whatsapp_number)
         if not token_data:
             return False
 
@@ -131,15 +141,16 @@ class GoogleDriveClient:
                     creds.refresh(Request())  # 🔄 Refresh the token
                     # Save refreshed credentials to persistent storage
                     refreshed_token_data = json.loads(creds.to_json())
-                    storage.save_token(refreshed_token_data)
+                    storage.save_token(refreshed_token_data, whatsapp_number)
                 except Exception as e:
-                    print("Token refresh failed:", e)
+                    print(f"Token refresh failed for WhatsApp number {whatsapp_number}:", e)
                     return False
             else:
                 return False
 
         # Build the Drive API self.service with valid credentials
         self.service = build('drive', 'v3', credentials=creds)
+        self.current_whatsapp_number = whatsapp_number
         return True
 
     

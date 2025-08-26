@@ -9,9 +9,14 @@ import Navbar from './components/Navbar';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
 
   const handleAuthChange = (authenticated) => {
     setIsAuthenticated(authenticated);
+  };
+
+  const handleWhatsAppNumberChange = (number) => {
+    setWhatsappNumber(number);
   };
 
   return (
@@ -20,15 +25,19 @@ function App() {
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
-            <AuthStatus onAuthChange={handleAuthChange} />
+            <AuthStatus 
+              onAuthChange={handleAuthChange} 
+              whatsappNumber={whatsappNumber}
+              onWhatsAppNumberChange={handleWhatsAppNumberChange}
+            />
           </div>
           
           <Routes>
             {isAuthenticated ? (
               <>
-                <Route path="/" element={<DriveExplorer />} />
-                <Route path="/operations" element={<FileOperations />} />
-                <Route path="/summary" element={<Summary />} />
+                <Route path="/" element={<DriveExplorer whatsappNumber={whatsappNumber} />} />
+                <Route path="/operations" element={<FileOperations whatsappNumber={whatsappNumber} />} />
+                <Route path="/summary" element={<Summary whatsappNumber={whatsappNumber} />} />
               </>
             ) : (
               <Route path="*" element={
@@ -38,7 +47,7 @@ function App() {
                       Connect to Google Drive
                     </h2>
                     <p className="text-gray-600 mb-6">
-                      Please connect to Google Drive above to start managing your files.
+                      Please enter your WhatsApp number and connect to Google Drive above to start managing your files.
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <h3 className="font-medium text-blue-800 mb-2">What you can do:</h3>

@@ -14,9 +14,11 @@ const api = axios.create({
 
 export const driveAPI = {
   // Check authentication status
-  checkAuthStatus: async () => {
+  checkAuthStatus: async (whatsappNumber) => {
     try {
-      const response = await api.get('/api/auth/status');
+      const response = await api.get('/api/auth/status', {
+        params: { whatsapp_number: whatsappNumber }
+      });
       return response.data;
     } catch (error) {
       throw error;

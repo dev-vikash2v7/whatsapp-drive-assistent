@@ -15,7 +15,7 @@ import {
   Search
 } from 'lucide-react';
 
-const FileOperations = () => {
+const FileOperations = ({ whatsappNumber }) => {
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(false);

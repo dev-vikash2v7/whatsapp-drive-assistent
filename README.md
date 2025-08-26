@@ -160,6 +160,19 @@ FLASK_ENV=development
 PORT=5000
 ```
 
+### Vercel Deployment Environment Variables
+
+For Vercel deployment, set these environment variables in your Vercel project settings:
+
+```env
+GOOGLE_DRIVE_CREDENTIALS_FILE=credentials.json
+GOOGLE_DRIVE_REDIRECT_URI=https://your-app.vercel.app
+STORAGE_PREFIX=STORAGE_
+VERCEL=1
+```
+
+**Note**: The application automatically uses persistent storage for Google Drive tokens on Vercel. See `backend/STORAGE_README.md` for detailed information about the storage system.
+
 ## Development
 
 ### Backend Development

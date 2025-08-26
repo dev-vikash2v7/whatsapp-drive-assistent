@@ -14,7 +14,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 
-const Summary = () => {
+const Summary = ({ whatsappNumber }) => {
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(false);
