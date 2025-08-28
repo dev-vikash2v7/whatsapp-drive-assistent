@@ -17,14 +17,13 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
   const [authStatus, setAuthStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
-  const [testingConnection, setTestingConnection] = useState(false);
   const [error, setError] = useState(null);
   const [whatsappNumberError, setWhatsappNumberError] = useState('');
  
  
 
   useEffect(() => {
-    if (whatsappNumber.trim()) {
+    if (whatsappNumber.trim().length == 10) {
       checkAuthStatus();
     }
   }, [whatsappNumber]);
@@ -32,8 +31,8 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
   const validateWhatsAppNumber = (number) => {
     // Basic WhatsApp number validation
     const cleaned = number.replace(/\D/g, '');
-    if (cleaned.length < 10 || cleaned.length > 15) {
-      return 'Please enter a valid WhatsApp number (10-15 digits)';
+    if (cleaned.length !=10) {
+      return 'Please enter a valid WhatsApp number (10 digits only)';
     }
     return '';
   };
@@ -45,9 +44,9 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
   };
 
   const login = useGoogleLogin({
-    flow: "auth-code", // 👈 IMPORTANT for backend exchange
-    scope: "https://www.googleapis.com/auth/drive.file",
-    onSuccess: async (response) => {
+    flow: "auth-code", 
+    scope: "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/userinfo.email openid https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive.readonly",
+       onSuccess: async (response) => {
       console.log("Auth Code Response:", response);
       
       if (!whatsappNumber.trim()) {
@@ -61,7 +60,6 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
         return;
       }
       
-      // response.code contains the authorization code
       const res = await fetch(API_BASE_URL + "/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,7 +68,6 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
           whatsapp_number: whatsappNumber.trim()
         }),
       });
-      // console.log(await res.json());
 
       const data = await res.json();
 
@@ -79,6 +76,9 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
           authenticated: true,
           message: 'Successfully connected to Google Drive'
         });
+
+        sessionStorage.setItem('whatsappNumber', whatsappNumber.trim());
+
         if (onAuthChange) {
           onAuthChange(true);
         }
@@ -142,36 +142,20 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
     }
   };
 
-  const handleTestConnection = async () => {
-    setTestingConnection(true);
-    setError(null);
-    try {
-      const response = await driveAPI.testConnection();
-      if (response.success) {
-        alert('Internet connection is working! The issue might be with Google Drive API access.');
-      } else {
-        alert(`Connection test failed: ${response.message}`);
-      }
-    } catch (err) {
-      alert('Failed to test connection. Please check if the backend server is running.');
-    } finally {
-      setTestingConnection(false);
-    }
-  };
-
+ 
   const getStatusIcon = () => {
     if (loading) {
       return <RefreshCw className="w-5 h-5 animate-spin text-gray-500" />;
     }
     if (authStatus?.authenticated) {
-      return <CheckCircle className="w-5 h-5 text-green-500" />;
+      return "";
     }
     return <XCircle className="w-5 h-5 text-red-500" />;
   };
 
   const getStatusText = () => {
     if (loading) return 'Checking connection...';
-    if (authStatus?.authenticated) return 'Connected to Google Drive';
+    if (authStatus?.authenticated) return '';
     return 'Not connected to Google Drive';
   };
 
@@ -222,12 +206,15 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
       </div>
 
       {/* Status Display */}
+
+      {whatsappNumber.trim().length == 10 &&
       <div className="flex items-center space-x-3 mb-4">
         {getStatusIcon()}
         <span className={`font-medium ${getStatusColor()}`}>
           {getStatusText()}
         </span>
       </div>
+      }
 
       {/* Status Message */}
       {authStatus?.message && (
@@ -275,23 +262,62 @@ const AuthStatus = ({ onAuthChange, whatsappNumber, onWhatsAppNumberChange }) =>
 
     
 
-        {/* Connected Status */}
         {authStatus?.authenticated && (
+          <>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-5 h-5 text-green-500" />
               <span className="text-green-800 font-medium">
                 Successfully connected to Google Drive
               </span>
+
             </div>
             <p className="text-sm text-green-700 mt-1">
               You can now browse and manage your Google Drive files.
             </p>
+
+
+
+
+
+
+
+
+
           </div>
+      
+       <button onClick={async()=>{
+                            
+                             const res = await fetch(API_BASE_URL + "/api/disconnect", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ 
+                              whatsapp_number: whatsappNumber.trim()
+                            }),
+                          });
+      
+                          const data = await res.json();
+      
+                          if (data.success) {
+                            onWhatsAppNumberChange('');
+                            onAuthChange(false);
+                            sessionStorage.removeItem('whatsappNumber');
+      setAuthStatus({ authenticated: false, message: 'Disconnected from Google Drive with this number.' });
+
+                          } else {
+                            setError(data.error || data.message || 'Failed to disconnect to Google Drive');
+                          }
+                          }}
+                          className='w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed'
+                          >Disconnect</button>
+      
+
+
+          </>
         )}
       </div>
-    </div>
+    </div>    
   );
-};
+};  
 
 export default AuthStatus;

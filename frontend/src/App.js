@@ -4,12 +4,13 @@ import DriveExplorer from './components/DriveExplorer';
 import FileOperations from './components/FileOperations';
 import Summary from './components/Summary';
 import AuthStatus from './components/AuthStatus';
-import CredentialsGuide from './components/CredentialsGuide';
 import Navbar from './components/Navbar';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState(sessionStorage.getItem('whatsappNumber') || '');
+
+  console.log("WhatsApp Number:", whatsappNumber);
 
   const handleAuthChange = (authenticated) => {
     setIsAuthenticated(authenticated);
@@ -46,6 +47,8 @@ function App() {
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">
                       Connect to Google Drive
                     </h2>
+
+                   
                     <p className="text-gray-600 mb-6">
                       Please enter your WhatsApp number and connect to Google Drive above to start managing your files.
                     </p>

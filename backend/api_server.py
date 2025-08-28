@@ -1,6 +1,5 @@
 import os
 import json
-import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from twilio.twiml.messaging_response import MessagingResponse
@@ -14,9 +13,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -44,9 +40,10 @@ def auth():
     
     try:
         drive_client._authenticate(code, whatsapp_number)
+
         return jsonify({"success": True, "message": "Connected to Google Drive"})
     except Exception as e:
-        logger.error(f"Authentication failed: {e}")
+        print(f"Authentication failed: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -129,7 +126,7 @@ def api_execute():
         })
         
     except Exception as e:
-        logger.error(f"Error in API execute: {e}")
+        print(f"Error in API execute: {e}")
         return jsonify({
             "success": False,
             "error": str(e),
@@ -156,7 +153,7 @@ def get_files():
         })
         
     except Exception as e:
-        logger.error(f"Error getting files: {e}")
+        print(f"Error getting files: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
@@ -180,7 +177,7 @@ def delete_file_api(file_path):
         })
         
     except Exception as e:
-        logger.error(f"Error deleting file: {e}")
+        print(f"Error deleting file: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
@@ -214,7 +211,7 @@ def move_file_api():
         })
         
     except Exception as e:
-        logger.error(f"Error moving file: {e}")
+        print(f"Error moving file: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
@@ -248,7 +245,7 @@ def copy_file_api():
         })
         
     except Exception as e:
-        logger.error(f"Error copying file: {e}")
+        print(f"Error copying file: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
@@ -267,7 +264,7 @@ def get_file_summary_api(file_path):
         })
         
     except Exception as e:
-        logger.error(f"Error getting file summary: {e}")
+        print(f"Error getting file summary: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
@@ -286,7 +283,7 @@ def get_folder_summary_api(folder_path):
         })
         
     except Exception as e:
-        logger.error(f"Error getting folder summary: {e}")
+        print(f"Error getting folder summary: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
@@ -300,9 +297,7 @@ def _execute_command(command: str, parsed_command: dict) -> str:
         # print('parsed_command' , parsed_command)
         # print(GoogleDriveClient.serv  ice)
 
-        # Get WhatsApp number from the command context or use a default
-        # For now, we'll need to pass this through the command execution
-        # This will be handled by the webhook which has the from_number
+     
         whatsapp_number = getattr(command_parser, 'current_whatsapp_number', None)
         
         if not drive_client.service:
@@ -395,7 +390,7 @@ def _execute_command(command: str, parsed_command: dict) -> str:
             return f"❌ Unsupported command: {command}"
             
     except Exception as e:
-        logger.error(f"Error executing command {command}: {e}")
+        print(f"Error executing command {command}: {e}")
         return f"❌ Error executing command: {str(e)}"
 
 
@@ -423,6 +418,8 @@ def _format_list_response(result: dict) -> str:
         response += f"   📅 Modified: {file_info['modified']}\n\n"
     
     return response
+
+
 
 def _format_delete_response(result: dict) -> str:
     if "error" in result:
@@ -492,11 +489,28 @@ def is_authenticated():
 
     return jsonify({"success": True, "authenticated": is_authenticated})
 
+@app.route('/api/disconnect', methods=['POST'])
+def disconnect():
+    data = request.get_json()
+        
+    if not data:
+        return jsonify({"error": "No data received"}), 400
+    
+    whatsapp_number = data.get('whatsapp_number')
+    
+    if not whatsapp_number:
+        return jsonify({"success": False, "error": "WhatsApp number is required"}), 400
+    
+    status = drive_client.disconnect(whatsapp_number)
+
+
+    return jsonify({"success": status})
+
 
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'DEV'
     
-    # logger.info(f"Starting WhatsApp Drive Assistant API on port {port}")
+    # print(f"Starting WhatsApp Drive Assistant API on port {port}")
     app.run(host='0.0.0.0', port=port, debug=debug)

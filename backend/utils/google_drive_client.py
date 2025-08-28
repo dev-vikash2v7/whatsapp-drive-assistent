@@ -12,15 +12,11 @@ import base64
 from docx import Document
 import PyPDF2
 from bs4 import BeautifulSoup
-import logging
 from datetime import datetime
 from google_auth_oauthlib.flow import Flow
 from .storage import storage
 from .config import Config
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class GoogleDriveClient:
     
@@ -28,22 +24,14 @@ class GoogleDriveClient:
     current_whatsapp_number = None
 
     SCOPES = [
-        'https://www.googleapis.com/auth/drive.file',
-        'https://www.googleapis.com/auth/drive.appdata',
-        'https://www.googleapis.com/auth/drive',
-        'https://www.googleapis.com/auth/drive.metadata.readonly',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/drive.readonly',
-        'openid',
+      "https://www.googleapis.com/auth/drive.appdata", "https://www.googleapis.com/auth/drive.file",
+       "https://www.googleapis.com/auth/drive" , "https://www.googleapis.com/auth/drive.metadata.readonly", "https://www.googleapis.com/auth/userinfo.email", "openid" ,  "https://www.googleapis.com/auth/userinfo.profile" ,"https://www.googleapis.com/auth/drive.readonly"
     ]
-    
     def __init__(self, credentials_file: str = None):
         self.credentials_file =  os.getenv('GOOGLE_DRIVE_CREDENTIALS_FILE')
     
     def signIn(self, code: str, whatsapp_number: str):
         try:
-            print('Config.GOOGLE_DRIVE_REDIRECT_URI' , Config.GOOGLE_DRIVE_REDIRECT_URI)
             flow = Flow.from_client_secrets_file(
                         self.credentials_file, scopes=self.SCOPES, redirect_uri=Config.GOOGLE_DRIVE_REDIRECT_URI
                     )
@@ -61,17 +49,30 @@ class GoogleDriveClient:
                 storage.save_token(token_data, whatsapp_number)
                 self.current_whatsapp_number = whatsapp_number
             except Exception as e:
-                logger.error(f"Failed to save token for WhatsApp number {whatsapp_number}: {e}")
+                print(f"Failed to save token for WhatsApp number {whatsapp_number}: {e}")
 
             return creds
 
 
         except Exception as e:
-            logger.error(f"Failed to build Drive self.service: {e}")
+            print(f"Failed to build Drive self.service: {e}")
             print("Failed to build Drive self.service: " , e)
             raise ValueError(f"Failed to initialize Google Drive self.service: {str(e)}")
         
 
+
+
+    def disconnect(self, whatsapp_number: str) -> bool:
+        try:
+            storage.delete_token(whatsapp_number)
+            if self.current_whatsapp_number == whatsapp_number:
+                self.current_whatsapp_number = None
+                self.service = None
+            print(f"Disconnected and token deleted for WhatsApp number: {whatsapp_number}")
+            return True
+        except Exception as e:
+            print(f"Failed to disconnect for WhatsApp number {whatsapp_number}: {e}")
+            return False
 
 
     def _authenticate(self, code: str, whatsapp_number: str):
@@ -79,6 +80,8 @@ class GoogleDriveClient:
         try:
             creds = None
             
+            print("WhatsApp number for authentication: ", whatsapp_number)
+            print("code for authentication: ", code)
 
             if storage.token_exists(whatsapp_number):
                 try:
@@ -90,7 +93,7 @@ class GoogleDriveClient:
                     if not creds or not creds.valid:
                         creds = self.signIn(code, whatsapp_number)
                 except Exception as e:
-                    logger.error(f"Failed to load existing token for WhatsApp number {whatsapp_number}: {e}")
+                    print(f"Failed to load existing token for WhatsApp number {whatsapp_number}: {e}")
                     creds = None
             else :
                   creds = self.signIn(code, whatsapp_number)
@@ -102,17 +105,17 @@ class GoogleDriveClient:
                 print('self.service' , self.service)
 
 
-                logger.info(f"Google Drive authentication successful for WhatsApp number: {whatsapp_number}")
+                print(f"Google Drive authentication successful for WhatsApp number: {whatsapp_number}")
 
 
 
             except Exception as e:
-                logger.error(f"Failed to build Drive self.service: {e}")
+                print(f"Failed to build Drive self.service: {e}")
                 print("Failed to build Drive self.service: " , e)
                 raise ValueError(f"Failed to initialize Google Drive self.service: {str(e)}")
             
         except Exception as e:
-            logger.error(f"Authentication failed for WhatsApp number {whatsapp_number}: {e}")
+            print(f"Authentication failed for WhatsApp number {whatsapp_number}: {e}")
             print("Authentication failed: " , e)
             raise ValueError(f"Google Drive authentication failed: {str(e)}")
 
@@ -201,7 +204,7 @@ class GoogleDriveClient:
             return {"files": file_list}
             
         except HttpError as error:
-            logger.error(f"Error listing files: {error}")
+            print(f"Error listing files: {error}")
             return {"error": f"Failed to list files: {str(error)}"}
     
 
@@ -221,7 +224,7 @@ class GoogleDriveClient:
             return {"message": f"File '{file_path}' deleted successfully"}
             
         except HttpError as error:
-            logger.error(f"Error deleting file: {error}")
+            print(f"Error deleting file: {error}")
             return {"error": f"Failed to delete file: {str(error)}"}
 
 
@@ -253,7 +256,7 @@ class GoogleDriveClient:
             return {"message": f"File moved from '{source_path}' to '{destination_path}' successfully"}
             
         except HttpError as error:
-            logger.error(f"Error moving file: {error}")
+            print(f"Error moving file: {error}")
             return {"error": f"Failed to move file: {str(error)}"}
     
 
@@ -286,7 +289,7 @@ class GoogleDriveClient:
 
 
         except HttpError as error:
-            logger.error(f"Error copying file: {error}")
+            print(f"Error copying file: {error}")
             return {"error": f"Failed to copy file: {str(error)}"}
 
 
@@ -323,7 +326,7 @@ class GoogleDriveClient:
             return {"content": content, "filename": file_metadata['name']}
             
         except HttpError as error:
-            logger.error(f"Error getting document content: {error}")
+            print(f"Error getting document content: {error}")
             return {"error": f"Failed to get document content: {str(error)}"}
     
     def _get_google_doc_content(self, file_id: str) -> str:
@@ -342,7 +345,7 @@ class GoogleDriveClient:
             
             return fh.getvalue().decode('utf-8')
         except Exception as e:
-            logger.error(f"Error extracting Google Doc content: {e}")
+            print(f"Error extracting Google Doc content: {e}")
             return ""
     
     def _get_pdf_content(self, file_id: str) -> str:
@@ -365,7 +368,7 @@ class GoogleDriveClient:
             
             return text
         except Exception as e:
-            logger.error(f"Error extracting PDF content: {e}")
+            print(f"Error extracting PDF content: {e}")
             return ""
     
     def _get_docx_content(self, file_id: str) -> str:
@@ -388,7 +391,7 @@ class GoogleDriveClient:
             
             return text
         except Exception as e:
-            logger.error(f"Error extracting DOCX content: {e}")
+            print(f"Error extracting DOCX content: {e}")
             return ""
     
     def _get_text_content(self, file_id: str) -> str:
@@ -403,7 +406,7 @@ class GoogleDriveClient:
             
             return fh.getvalue().decode('utf-8')
         except Exception as e:
-            logger.error(f"Error extracting text content: {e}")
+            print(f"Error extracting text content: {e}")
             return ""
     
 
@@ -428,7 +431,7 @@ class GoogleDriveClient:
                 return files[0]['id']
             return None
         except Exception as e:
-            logger.error(f"Error getting folder ID: {e}")
+            print(f"Error getting folder ID: {e}")
             return None
     
 
@@ -478,7 +481,7 @@ class GoogleDriveClient:
 
             return None
         except Exception as e:
-            logger.error(f"Error getting file ID: {e}")
+            print(f"Error getting file ID: {e}")
             return None
     
     def _format_size(self, size_bytes: int) -> str:

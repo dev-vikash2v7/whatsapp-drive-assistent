@@ -16,13 +16,14 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
+          <img src="/logo.png" alt="Logo" className="h-8 w-8 mr-2" />
             <h1 className="text-xl font-bold text-gray-800">
               WhatsApp Drive Assistant
             </h1>
           </div>
           
           <div className="flex space-x-1">
-            {navItems.map((item) => {
+            {/* {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               
@@ -40,7 +41,7 @@ const Navbar = () => {
                   {item.label}
                 </Link>
               );
-            })}
+            })} */}
           </div>
         </div>
       </div>

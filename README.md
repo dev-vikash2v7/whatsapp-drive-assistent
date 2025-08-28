@@ -156,7 +156,7 @@ Create a `.env` file in the project root:
 
 ```env
 GOOGLE_DRIVE_CREDENTIALS_FILE=credentials.json
-FLASK_ENV=development
+FLASK_ENV=DEV
 PORT=5000
 ```
 
@@ -233,7 +233,7 @@ If you encounter SSL errors like "wrong version number":
    - If on corporate network, check proxy settings
 
 ### Debug Mode
-- Backend: Set `FLASK_ENV=development` for debug output
+- Backend: Set `FLASK_ENV=DEV` for debug output
 - Frontend: Use browser developer tools for debugging
 
 ## Contributing

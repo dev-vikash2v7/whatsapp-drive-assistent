@@ -5,8 +5,6 @@ from typing import List, Dict, Optional
 from utils.google_drive_client import GoogleDriveClient
 import google.generativeai as genai
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 class DocumentSummarizer:
@@ -32,7 +30,7 @@ class DocumentSummarizer:
             self.client = genai.GenerativeModel("gemini-2.0-flash")
 
         except Exception as e:
-            logger.error(f"Error initializing OpenAI client: {e}")
+            print(f"Error initializing OpenAI client: {e}")
             # Restore proxy environment variables if they existed
             for var, value in original_proxy_values.items():
                 os.environ[var] = value
@@ -100,7 +98,7 @@ class DocumentSummarizer:
             }
             
         except Exception as e:
-            logger.error(f"Error summarizing folder: {e}")
+            print(f"Error summarizing folder: {e}")
             return {"error": f"Failed to summarize folder: {str(e)}"}
     
     def summarize_single_document(self,drive_client: GoogleDriveClient ,  file_path: str) -> Dict:
@@ -111,7 +109,7 @@ class DocumentSummarizer:
             return self._summarize_single_document(drive_client,file_path, file_name)
             
         except Exception as e:
-            logger.error(f"Error summarizing document: {e}")
+            print(f"Error summarizing document: {e}")
             return {"error": f"Failed to summarize document: {str(e)}"}
     
 
@@ -150,7 +148,7 @@ class DocumentSummarizer:
             }
             
         except Exception as e:
-            logger.error(f"Error in _summarize_single_document: {e}")
+            print(f"Error in _summarize_single_document: {e}")
             return {"error": f"Failed to summarize document: {str(e)}"}
     
 
@@ -174,7 +172,7 @@ class DocumentSummarizer:
             return {"summary": summary}
             
         except Exception as e:
-            logger.error(f"Error generating AI summary: {e}")
+            print(f"Error generating AI summary: {e}")
             return {"error": f"Failed to generate AI summary: {str(e)}"}
 
 
@@ -206,7 +204,7 @@ class DocumentSummarizer:
             return response.text.strip()
             
         except Exception as e:
-            logger.error(f"Error creating folder summary: {e}")
+            print(f"Error creating folder summary: {e}")
             return f"Folder contains {len(summaries)} documents. Individual summaries available above."
 
             
@@ -241,5 +239,5 @@ class DocumentSummarizer:
             return "❌ Unexpected response format"
             
         except Exception as e:
-            logger.error(f"Error formatting summary response: {e}")
+            print(f"Error formatting summary response: {e}")
             return f"❌ Error formatting response: {str(e)}"

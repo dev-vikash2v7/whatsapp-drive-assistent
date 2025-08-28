@@ -1,13 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { whatsappAPI } from '../services/api';
 
-const DriveExplorer = ({ whatsappNumber }) => {
-  const [qrData, setQrData] = useState(null);
-  const [joinCodeData, setJoinCodeData] = useState(null);
-  const [whatsappStatus, setWhatsappStatus] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('qr'); // 'qr' or 'join'
-
+const DriveExplorer = () => {
 
   const handleOpenWhatsApp = () => {
       const phoneNumber = '+14155238886';

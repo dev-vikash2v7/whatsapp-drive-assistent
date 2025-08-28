@@ -1,11 +1,7 @@
 import re
-import logging
 from typing import Dict, Optional, Tuple
 from enum import Enum
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class CommandType(Enum):
     """Enumeration of supported commands"""
@@ -86,7 +82,7 @@ class CommandParser:
                 return self._create_error_response(f"Unsupported command: {command}")
                 
         except Exception as e:
-            logger.error(f"Error parsing message: {e}")
+            print(f"Error parsing message: {e}")
             return self._create_error_response(f"Error parsing command: {str(e)}")
     
     def _parse_list_command(self, parts: list) -> Dict:
